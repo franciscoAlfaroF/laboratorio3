@@ -1,0 +1,91 @@
+LABORATORIO 3: APLICACIÓN INTELIGENTE ADAPTATIVA
+Ingeniería Web Avanzada | OII436-1
+Fecha: 09-11-2026
+
+EJECUCIÓN Y EVIDENCIAS
+
+Entorno: Windows, Python 3.15.2, NumPy 2.5.4, pandas 3.1.1 y
+scikit-learn 1.9.1. Comandos ejecutados:
+  .\.venv\Scripts\python.exe app.py --comprobar
+  .\.venv\Scripts\python.exe app.py --demo
+
+La comprobación detectó 12 recursos, 4 usuarios y una matriz TF-IDF de 12 filas
+y 17 términos. Los cuatro casos de prueba terminaron en Cumple.
+
+T1. u1 obtuvo R02 (1.0000), R12 (0.4965) y R03 (0.4326). u2 obtuvo R07
+(1.0000), R08 (0.5677) y R09 (0.3087). Las listas tienen hasta tres resultados,
+están ordenadas de mayor a menor puntuación y contienen solo puntuaciones
+positivas.
+
+T2. Antes de valorar R04, el perfil de u1 era:
+  pandas=0.753247, datos=0.465091, python=0.465091.
+Después:
+  python=0.637116, api=0.446269, web=0.446269,
+  pandas=0.376477, datos=0.232455.
+La puntuación de R05 subió de 0.000000 a 0.437777; R04 pasó al primer lugar con
+0.8752 y se mantuvieron los 12 candidatos. La interacción quedó registrada en
+el historial de u1.
+
+T3. Después de la interacción de u1, el perfil, el historial, las puntuaciones y
+las recomendaciones de u2 permanecieron iguales.
+
+T4. u3 (intereses vacíos) y u4 (zzxyz123, fuera del vocabulario) obtuvieron
+puntuaciones cero, listas vacías y el mensaje:
+"No hay coincidencias positivas. Declare intereses presentes en el catálogo."
+
+RESPUESTAS
+
+1. El contenido de los recursos se describe en datos/recursos.csv; la columna
+   etiquetas es la que utiliza TF-IDF para representar cada recurso. El título
+   y la descripción solo se presentan al usuario. Los intereses iniciales
+   constituyen el perfil: son el campo intereses de datos/perfiles.json.
+   crear_perfil transforma ese texto al mismo espacio vectorial del catálogo, y
+   el vector se mantiene como estado en memoria.
+
+2. fit_transform aprende el vocabulario y los pesos IDF de las etiquetas del
+   catálogo y las convierte a vectores. transform representa los intereses
+   usando exactamente ese vocabulario y esos pesos. Ajustar un vectorizador
+   diferente por perfil podría producir diferentes dimensiones, orden de
+   términos y pesos; los vectores de usuario dejarían de ser compatibles o
+   comparables con los del catálogo.
+
+3. Las puntuaciones dependen de la similitud coseno entre cada vector del
+   catálogo y el vector particular del usuario. Como u1 y u2 tienen perfiles
+   diferentes, priorizan recursos distintos: R02 y R07, respectivamente. Una
+   similitud de 0.80 no significa un 80 % de probabilidad de gusto. Es una
+   medida geométrica entre vectores TF-IDF; no es una probabilidad calibrada ni
+   se entrenó un modelo con datos de aceptación y rechazo.
+
+4. Cambiar manualmente intereses en el JSON modifica la semilla que se carga al
+   iniciar el programa. La adaptación ocurre ante la acción Me interesa sobre
+   un recurso válido: registrar_interes modifica el perfil activo de ese
+   usuario con normalize(0.4 * perfil + 0.6 * vector_recurso) y registra el
+   evento en su historial. El nuevo perfil modifica las recomendaciones durante
+   esa ejecución. Al reiniciar, los perfiles se vuelven a cargar desde el JSON.
+
+5. MAPE-K:
+   - Monitorizar: la opción Me interesa y el ID del recurso capturan la
+     interacción del usuario.
+   - Analizar: TF-IDF representa los textos y calcular_puntuaciones usa
+     similitud coseno para medir afinidad.
+   - Planificar: recomendar ordena las puntuaciones y selecciona hasta tres
+     resultados positivos.
+   - Ejecutar: actualizar_perfil aplica la retroalimentación y la consola
+     presenta el perfil y las recomendaciones actualizadas.
+   - Conocimiento: el catálogo, el vocabulario y la matriz TF-IDF, junto con
+     los perfiles y los historiales por usuario, constituyen el estado empleado
+     durante la ejecución.
+
+6. Una limitación es que el método depende de coincidencias literales de
+   etiquetas y de una regla fija de ponderación; no reconoce sinónimos ni
+   modela el desinterés. Una mejora concreta sería incorporar la opción No me
+   interesa y guardar la etiqueta de cada interacción junto al ID del recurso.
+   El algoritmo podría penalizar la similitud con recursos rechazados además
+   de premiar los aceptados. Esto requiere recopilar retroalimentación positiva
+   y negativa y considerar ambas señales al calcular el ranking.
+
+ARCHIVOS DE EVIDENCIA
+
+evidencias/reporte_demo.json contiene los resultados y las comprobaciones
+detalladas. evidencias/puntuaciones_antes_despues.csv registra la puntuación de
+los mismos 12 recursos antes y después de la interacción.
